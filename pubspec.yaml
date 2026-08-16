@@ -1,0 +1,98 @@
+name: homeclient
+description: "Unified media streaming client for Google Drive and SMB/Samba"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.12.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+
+  # Media Engine (libmpv wrapper)
+  media_kit: ^1.2.6
+  media_kit_video: ^2.0.1
+  media_kit_libs_video: ^1.0.7
+
+  # Background Audio & Media Session
+  audio_service: ^0.18.19
+  audio_session: ^0.2.4
+
+  # SMB/Samba Protocol
+  smb_connect: ^0.0.9
+
+  # Network Service Discovery
+  nsd: ^5.0.1
+
+  # Google Drive
+  google_sign_in: ^6.2.2
+  googleapis: ^13.2.0
+  googleapis_auth: ^1.6.0
+  extension_google_sign_in_as_googleapis_auth: ^2.0.12
+
+  # State Management
+  flutter_riverpod: ^2.6.1
+
+  # Routing
+  go_router: ^14.8.1
+
+  # Network / Connectivity
+  connectivity_plus: ^6.0.3
+
+  # Local Storage
+  shared_preferences: ^2.3.5
+
+  # Local HTTP Proxy (for SMB→media_kit bridge)
+  shelf: ^1.4.2
+  shelf_router: ^1.1.4
+
+  # UI / Design
+  google_fonts: ^6.2.1
+  shimmer: ^3.0.0
+  flutter_animate: ^4.5.2
+  gap: ^3.0.1
+  iconsax_flutter: ^1.0.0
+
+  # Utilities
+  path: ^1.9.0
+  collection: ^1.18.0
+  intl: ^0.19.0
+  uuid: ^4.5.1
+  http: ^1.2.2
+  flutter_displaymode: ^0.7.0
+  cached_network_image: ^3.4.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/fonts/
+
+  fonts:
+    - family: GoogleSansFlex
+      fonts:
+        - asset: assets/fonts/GoogleSansFlex.ttf
+          weight: 100
+        - asset: assets/fonts/GoogleSansFlex.ttf
+          weight: 200
+        - asset: assets/fonts/GoogleSansFlex.ttf
+          weight: 300
+        - asset: assets/fonts/GoogleSansFlex.ttf
+          weight: 400
+        - asset: assets/fonts/GoogleSansFlex.ttf
+          weight: 500
+        - asset: assets/fonts/GoogleSansFlex.ttf
+          weight: 600
+        - asset: assets/fonts/GoogleSansFlex.ttf
+          weight: 700
+        - asset: assets/fonts/GoogleSansFlex.ttf
+          weight: 800
+        - asset: assets/fonts/GoogleSansFlex.ttf
+          weight: 900
