@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_typography.dart';
 import '../../providers/media_list_provider.dart';
-
+import 'package:flutter_animate/flutter_animate.dart';
 
 class ArtistsTab extends ConsumerWidget {
   const ArtistsTab({super.key});
@@ -48,7 +48,7 @@ class ArtistsTab extends ConsumerWidget {
               onTap: () {
              
               },
-            );
+            ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1, end: 0, curve: Curves.easeOutQuad);
           },
         );
       },

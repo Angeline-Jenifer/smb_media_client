@@ -1,0 +1,6 @@
+-keep class com.ryanheise.audioservice.** { *; }
+-keep class android.support.v4.media.** { *; }
+-keep class androidx.media.** { *; }
+-keep class com.dexterous.** { *; }
+-keep class io.flutter.plugins.** { *; }
+-keep class androidx.core.app.NotificationCompat** { *; }

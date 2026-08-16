@@ -6,7 +6,11 @@ import '../services/google_drive_service.dart';
 
 
 class MediaKitAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandler {
-  final Player _player = Player();
+  final Player _player = Player(
+    configuration: const PlayerConfiguration(
+      bufferSize: 64 * 1024 * 1024, // 64MB buffer
+    ),
+  );
   final List<MediaItem> _queue = [];
   int _currentIndex = -1;
 
@@ -104,13 +108,6 @@ class MediaKitAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
       processingState: AudioProcessingState.idle,
       playing: false,
     ));
-    await super.stop();
-  }
-
-  @override
-  Future<void> onTaskRemoved() async {
-    await stop();
-    await super.onTaskRemoved();
   }
 
   @override

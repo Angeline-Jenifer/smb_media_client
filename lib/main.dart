@@ -24,34 +24,34 @@ void main() async {
     }
   }
 
-
+  // System UI
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.light,
   ));
 
-
+  // Initialize media_kit (required for libmpv)
   MediaKit.ensureInitialized();
 
-
+  // Initialize local storage
   await LocalStorageService.init();
 
-
+  // Restore Google login session silently if exists
   await GoogleDriveService.instance.signInSilently();
 
-
+  // Initialize audio_service with our custom handler
   globalAudioHandler = await AudioService.init(
     builder: () => MediaKitAudioHandler(),
-    config: const AudioServiceConfig(
+    config: AudioServiceConfig(
       androidNotificationChannelId: 'com.rexon.homeclient.audio',
       androidNotificationChannelName: 'HomeClient Audio',
-      androidNotificationOngoing: false,
+      androidNotificationOngoing: true,
       androidShowNotificationBadge: true,
       androidStopForegroundOnPause: true,
     ),
   );
 
-
+  // Start the local proxy server for SMB streaming
   await LocalProxyServer.instance.start();
 
   runApp(

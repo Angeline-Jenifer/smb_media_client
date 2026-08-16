@@ -30,7 +30,11 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   @override
   void initState() {
     super.initState();
-    _player = Player();
+    _player = Player(
+      configuration: const PlayerConfiguration(
+        bufferSize: 256 * 1024 * 1024, // 256MB buffer for video streaming
+      ),
+    );
     _controller = VideoController(_player);
 
     // Enter fullscreen

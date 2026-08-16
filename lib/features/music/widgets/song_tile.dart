@@ -14,8 +14,7 @@ import '../../../services/google_drive_service.dart';
 import '../../../services/local_proxy_server.dart';
 import '../../../providers/media_list_provider.dart';
 import '../../../providers/recently_played_provider.dart';
-
-
+import 'package:flutter_animate/flutter_animate.dart';
 class SongTile extends ConsumerWidget {
   final MediaItemModel song;
   final List<MediaItemModel> playlist;
@@ -132,7 +131,7 @@ class SongTile extends ConsumerWidget {
         ),
       ),
       onTap: () => _playSong(ref, context),
-    );
+    ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1, end: 0, curve: Curves.easeOutQuad);
   }
 
   Future<void> _playSong(WidgetRef ref, BuildContext context) async {

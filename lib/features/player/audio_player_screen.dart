@@ -9,6 +9,10 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_typography.dart';
 import '../../audio/audio_provider.dart';
 import '../../extensions/duration_extension.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:audio_session/audio_session.dart' as audio_session;
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:android_intent_plus/android_intent.dart';
 
 class _LyricLine {
   final Duration time;
@@ -230,11 +234,37 @@ class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
               ),
               const Spacer(),
              
-              _buildCircleIconButton(
-                icon: Icons.devices_rounded,
-                isDark: isDark,
-                iconSize: 20,
-                onPressed: () {},
+              FutureBuilder<String>(
+                future: _fetchActiveDevice(),
+                builder: (context, snapshot) {
+                  final deviceName = snapshot.data ?? 'Speaker';
+                  return Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.speaker_rounded,
+                          size: 14,
+                          color: isDark ? Colors.white70 : Colors.black54,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          deviceName.length > 15 ? '${deviceName.substring(0, 15)}...' : deviceName,
+                          style: googleSansFlex(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? Colors.white70 : Colors.black54,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
               const SizedBox(width: 8),
               _buildCircleIconButton(
@@ -254,33 +284,36 @@ class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: AspectRatio(
             aspectRatio: 1.0,
-            child: Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(28),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.15),
-                    blurRadius: 30,
-                    offset: const Offset(0, 12),
-                  ),
-                ],
-                image: item.artUri != null
-                    ? DecorationImage(
-                        image: item.artUri!.toString().startsWith('file://')
-                            ? FileImage(File(item.artUri!.toString().replaceFirst('file://', ''))) as ImageProvider
-                            : CachedNetworkImageProvider(item.artUri!.toString()),
-                        fit: BoxFit.cover,
+            child: Hero(
+              tag: 'album_art_${item.id}',
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(28),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.15),
+                      blurRadius: 30,
+                      offset: const Offset(0, 12),
+                    ),
+                  ],
+                  image: item.artUri != null
+                      ? DecorationImage(
+                          image: item.artUri!.toString().startsWith('file://')
+                              ? FileImage(File(item.artUri!.toString().replaceFirst('file://', ''))) as ImageProvider
+                              : CachedNetworkImageProvider(item.artUri!.toString()),
+                          fit: BoxFit.cover,
+                        )
+                      : null,
+                  color: isDark ? AppColors.darkSurfaceVariant : AppColors.lightSurfaceVariant,
+                ),
+                child: item.artUri == null
+                    ? Icon(
+                        Icons.music_note_rounded,
+                        size: 90,
+                        color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
                       )
                     : null,
-                color: isDark ? AppColors.darkSurfaceVariant : AppColors.lightSurfaceVariant,
               ),
-              child: item.artUri == null
-                  ? Icon(
-                      Icons.music_note_rounded,
-                      size: 90,
-                      color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-                    )
-                  : null,
             ),
           ),
         ),
@@ -894,5 +927,30 @@ class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
     }
 
     return '$sampleRateStr • $bitrateStr • $codec';
+  }
+
+  Future<String> _fetchActiveDevice() async {
+    try {
+      final session = await audio_session.AudioSession.instance;
+      final allDevices = await session.getDevices();
+      final outputDevices = allDevices.where((d) => d.isOutput).toList();
+      if (outputDevices.isEmpty) return 'Speaker';
+      
+      final a2dp = outputDevices.where((d) => d.type.name.toLowerCase().contains('bluetooth')).toList();
+      if (a2dp.isNotEmpty) return a2dp.first.name;
+      
+      final usb = outputDevices.where((d) => d.type.name.toLowerCase().contains('usb')).toList();
+      if (usb.isNotEmpty) return usb.first.name;
+      
+      final wired = outputDevices.where((d) => d.type.name.toLowerCase().contains('wired') || d.type.name.toLowerCase().contains('head')).toList();
+      if (wired.isNotEmpty) return wired.first.name;
+
+      final speaker = outputDevices.where((d) => d.type.name.toLowerCase().contains('speaker')).toList();
+      if (speaker.isNotEmpty) return speaker.first.name;
+
+      return outputDevices.first.name;
+    } catch (_) {
+      return 'Speaker';
+    }
   }
 }

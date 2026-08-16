@@ -8,6 +8,7 @@ class LocalProxyServer {
   static LocalProxyServer? _instance;
   HttpServer? _server;
   int _port = 0;
+  final Map<String, int> _fileSizeCache = {};
 
   LocalProxyServer._();
 
@@ -73,7 +74,11 @@ class LocalProxyServer {
       return;
     }
 
-    final fileSize = await smb.getFileSize(share, path);
+    final cacheKey = '$share/$path';
+    if (!_fileSizeCache.containsKey(cacheKey)) {
+      _fileSizeCache[cacheKey] = await smb.getFileSize(share, path);
+    }
+    final fileSize = _fileSizeCache[cacheKey]!;
     final rangeHeader = req.headers.value('range');
     int? start;
     int? end;

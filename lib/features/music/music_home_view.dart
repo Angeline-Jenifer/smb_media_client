@@ -20,8 +20,7 @@ import 'songs_tab.dart';
 import 'albums_tab.dart';
 
 import 'widgets/song_tile.dart';
-
-
+import 'package:flutter_animate/flutter_animate.dart';
 class MusicHomeView extends ConsumerStatefulWidget {
   const MusicHomeView({super.key});
 
@@ -307,7 +306,7 @@ class _SectionHeader extends StatelessWidget {
           ],
         ],
       ),
-    );
+    ).animate().fadeIn(duration: 400.ms).slideX(begin: -0.05, end: 0, curve: Curves.easeOutQuad);
   }
 }
 
@@ -438,7 +437,7 @@ class _RecentCard extends ConsumerWidget {
           ],
         ),
       ),
-    );
+    ).animate().fadeIn(duration: 400.ms).slideX(begin: 0.1, end: 0, curve: Curves.easeOutQuad);
   }
 }
 

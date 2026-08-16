@@ -1,4 +1,3 @@
-
 class ServerInfo {
   final String name;
   final String host;

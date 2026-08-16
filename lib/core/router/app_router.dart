@@ -30,14 +30,8 @@ final appRouter = GoRouter(
       pageBuilder: (context, state) => CustomTransitionPage(
         child: const AudioPlayerScreen(),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(0, 1),
-              end: Offset.zero,
-            ).animate(CurvedAnimation(
-              parent: animation,
-              curve: Curves.easeOutCubic,
-            )),
+          return FadeTransition(
+            opacity: animation,
             child: child,
           );
         },
