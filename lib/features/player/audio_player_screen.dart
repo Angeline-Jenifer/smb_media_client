@@ -9,10 +9,7 @@ import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_typography.dart';
 import '../../audio/audio_provider.dart';
 import '../../extensions/duration_extension.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:audio_session/audio_session.dart' as audio_session;
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:android_intent_plus/android_intent.dart';
 
 class _LyricLine {
   final Duration time;
@@ -206,9 +203,6 @@ class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
     final secondaryPillBg = isDark ? AppColors.darkSurfaceVariant : AppColors.lightSurfaceVariant;
     final secondaryPillIcon = isDark ? Colors.white : AppColors.lightTextPrimary;
 
-    final dockBg = isDark ? AppColors.darkSurfaceVariant : AppColors.lightSurfaceVariant;
-    final dockBorder = isDark ? AppColors.glassBorder : AppColors.glassDarkBorder;
-
     return Column(
       key: const ValueKey('PlayerView'),
       children: [
@@ -223,7 +217,7 @@ class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
                 isDark: isDark,
                 onPressed: () => Navigator.pop(context),
               ),
-              const Spacer(),
+              const SizedBox(width: 12),
               Text(
                 'Now Playing',
                 style: googleSansFlex(
@@ -238,40 +232,48 @@ class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
                 future: _fetchActiveDevice(),
                 builder: (context, snapshot) {
                   final deviceName = snapshot.data ?? 'Speaker';
-                  return Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.05),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.speaker_rounded,
-                          size: 14,
-                          color: isDark ? Colors.white70 : Colors.black54,
+                  return ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.white.withValues(alpha: 0.12) : Colors.black.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(20),
                         ),
-                        const SizedBox(width: 6),
-                        Text(
-                          deviceName.length > 15 ? '${deviceName.substring(0, 15)}...' : deviceName,
-                          style: googleSansFlex(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: isDark ? Colors.white70 : Colors.black54,
-                          ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.speaker_rounded,
+                              size: 14,
+                              color: isDark ? Colors.white70 : Colors.black54,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              deviceName.length > 15 ? '${deviceName.substring(0, 15)}...' : deviceName,
+                              style: googleSansFlex(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: isDark ? Colors.white70 : Colors.black54,
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   );
                 },
               ),
               const SizedBox(width: 8),
               _buildCircleIconButton(
-                icon: Icons.queue_music_rounded,
+                icon: Icons.lyrics_outlined,
                 isDark: isDark,
                 iconSize: 20,
-                onPressed: () {},
+                onPressed: () {
+                  setState(() => _showLyrics = true);
+                },
               ),
             ],
           ),
@@ -355,16 +357,6 @@ class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
                   ],
                 ),
               ),
-
-           
-              _buildCircleIconButton(
-                icon: Icons.lyrics_outlined,
-                isDark: isDark,
-                iconSize: 22,
-                onPressed: () {
-                  setState(() => _showLyrics = true);
-                },
-              ),
             ],
           ),
         ),
@@ -408,22 +400,24 @@ class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
                       ),
                     ),
                   
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: isDark ? AppColors.darkSurfaceVariant : AppColors.lightSurfaceVariant,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: isDark ? AppColors.glassBorder : AppColors.glassDarkBorder,
-                          width: 0.8,
-                        ),
-                      ),
-                      child: Text(
-                        _getAudioQualityBadge(item, audioParams, dur),
-                        style: googleSansFlex(
-                          color: isDark ? AppColors.neonGreen : AppColors.lightTextPrimary,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: isDark ? Colors.white.withValues(alpha: 0.12) : Colors.black.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            _getAudioQualityBadge(item, audioParams, dur),
+                            style: googleSansFlex(
+                              color: isDark ? AppColors.neonGreen : AppColors.lightTextPrimary,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -443,33 +437,39 @@ class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
 
         const SizedBox(height: 24),
 
-      
+        // Controls (Previous, Play/Pause, Next)
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-             
+              // Skip Previous
               _buildPillButton(
                 icon: Icons.skip_previous_rounded,
                 bgColor: secondaryPillBg,
                 iconColor: secondaryPillIcon,
+                isGlass: true,
+                isDark: isDark,
                 onPressed: () => handler.skipToPrevious(),
               ),
 
-       
+              // Play / Pause (Solid Vibrant Pill)
               _buildPillButton(
                 icon: isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
                 bgColor: primaryPillBg,
                 iconColor: primaryPillIcon,
+                isGlass: false,
+                isDark: isDark,
                 onPressed: () => isPlaying ? handler.pause() : handler.play(),
               ),
 
-            
+              // Skip Next
               _buildPillButton(
                 icon: Icons.skip_next_rounded,
                 bgColor: secondaryPillBg,
                 iconColor: secondaryPillIcon,
+                isGlass: true,
+                isDark: isDark,
                 onPressed: () => handler.skipToNext(),
               ),
             ],
@@ -478,49 +478,54 @@ class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
 
         const SizedBox(height: 20),
 
-    
-        Container(
-          width: 280,
-          height: 56,
-          decoration: BoxDecoration(
-            color: dockBg,
-            borderRadius: BorderRadius.circular(28),
-            border: Border.all(color: dockBorder, width: 1.2),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              IconButton(
-                onPressed: () => setState(() => _isShuffle = !_isShuffle),
-                icon: Icon(
-                  Icons.shuffle_rounded,
-                  color: _isShuffle
-                      ? (isDark ? AppColors.neonGreen : AppColors.lightTextPrimary)
-                      : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
-                  size: 22,
-                ),
+        // Bottom dock (Shuffle / Repeat / Favorite)
+        ClipRRect(
+          borderRadius: BorderRadius.circular(28),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+            child: Container(
+              width: 280,
+              height: 56,
+              decoration: BoxDecoration(
+                color: isDark ? Colors.white.withValues(alpha: 0.12) : Colors.black.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(28),
               ),
-              IconButton(
-                onPressed: () => setState(() => _isRepeat = !_isRepeat),
-                icon: Icon(
-                  Icons.repeat_rounded,
-                  color: _isRepeat
-                      ? (isDark ? AppColors.neonGreen : AppColors.lightTextPrimary)
-                      : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
-                  size: 22,
-                ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  IconButton(
+                    onPressed: () => setState(() => _isShuffle = !_isShuffle),
+                    icon: Icon(
+                      Icons.shuffle_rounded,
+                      color: _isShuffle
+                          ? (isDark ? AppColors.neonGreen : AppColors.lightTextPrimary)
+                          : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
+                      size: 22,
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => setState(() => _isRepeat = !_isRepeat),
+                    icon: Icon(
+                      Icons.repeat_rounded,
+                      color: _isRepeat
+                          ? (isDark ? AppColors.neonGreen : AppColors.lightTextPrimary)
+                          : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
+                      size: 22,
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => setState(() => _isFavorite = !_isFavorite),
+                    icon: Icon(
+                      _isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                      color: _isFavorite
+                          ? AppColors.error
+                          : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
+                      size: 22,
+                    ),
+                  ),
+                ],
               ),
-              IconButton(
-                onPressed: () => setState(() => _isFavorite = !_isFavorite),
-                icon: Icon(
-                  _isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                  color: _isFavorite
-                      ? AppColors.error
-                      : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
-                  size: 22,
-                ),
-              ),
-            ],
+            ),
           ),
         ),
 
@@ -541,8 +546,6 @@ class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
     AudioHandler handler,
     bool isDark,
   ) {
-    final pillBg = isDark ? AppColors.darkSurfaceVariant : AppColors.lightSurfaceVariant;
-    final pillBorder = isDark ? AppColors.glassBorder : AppColors.glassDarkBorder;
     final playPillBg = isDark ? AppColors.neonGreen : AppColors.lightTextPrimary;
     final playPillIcon = isDark ? Colors.black : Colors.white;
 
@@ -553,80 +556,86 @@ class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
       key: const ValueKey('LyricsView'),
       children: [
       
+        // Top Mini Player Header Bar
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: pillBg,
-              borderRadius: BorderRadius.circular(32),
-              border: Border.all(color: pillBorder, width: 1.2),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 42,
-                  height: 42,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    image: item.artUri != null
-                        ? DecorationImage(
-                            image: item.artUri!.toString().startsWith('file://')
-                                ? FileImage(File(item.artUri!.toString().replaceFirst('file://', ''))) as ImageProvider
-                                : CachedNetworkImageProvider(item.artUri!.toString()),
-                            fit: BoxFit.cover,
-                          )
-                        : null,
-                    color: isDark ? AppColors.darkSurfaceVariant : AppColors.lightSurfaceVariant,
-                  ),
-                  child: item.artUri == null
-                      ? Icon(
-                          Icons.music_note_rounded,
-                          size: 20,
-                          color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-                        )
-                      : null,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(32),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white.withValues(alpha: 0.12) : Colors.black.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(32),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        item.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: googleSansFlex(
-                          color: isDark ? Colors.white : AppColors.lightTextPrimary,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                        ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        image: item.artUri != null
+                            ? DecorationImage(
+                                image: item.artUri!.toString().startsWith('file://')
+                                    ? FileImage(File(item.artUri!.toString().replaceFirst('file://', ''))) as ImageProvider
+                                    : CachedNetworkImageProvider(item.artUri!.toString()),
+                                fit: BoxFit.cover,
+                              )
+                            : null,
+                        color: isDark ? AppColors.darkSurfaceVariant : AppColors.lightSurfaceVariant,
                       ),
-                      Text(
-                        item.artist ?? 'Unknown Artist',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: googleSansFlex(
-                          color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-                          fontSize: 13,
-                        ),
+                      child: item.artUri == null
+                          ? Icon(
+                              Icons.music_note_rounded,
+                              size: 20,
+                              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                            )
+                          : null,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            item.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: googleSansFlex(
+                              color: isDark ? Colors.white : AppColors.lightTextPrimary,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          Text(
+                            item.artist ?? 'Unknown Artist',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: googleSansFlex(
+                              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                    Icon(
+                      Icons.bar_chart_rounded,
+                      color: isDark ? Colors.white : AppColors.lightTextPrimary,
+                      size: 24,
+                    ),
+                    const SizedBox(width: 8),
+                  ],
                 ),
-                Icon(
-                  Icons.bar_chart_rounded,
-                  color: isDark ? Colors.white : AppColors.lightTextPrimary,
-                  size: 24,
-                ),
-                const SizedBox(width: 8),
-              ],
+              ),
             ),
           ),
         ),
 
-
+        // Lyrics Text View
         Expanded(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -676,15 +685,14 @@ class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
           ),
         ),
 
-    
+        // Bottom Controls Bar for Lyrics
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
           child: Column(
             children: [
-            
+              // Row 1: Play/Pause button + Glassy Seekbar
               Row(
                 children: [
-              
                   GestureDetector(
                     onTap: () => isPlaying ? handler.pause() : handler.play(),
                     child: Container(
@@ -704,30 +712,35 @@ class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
                   const SizedBox(width: 12),
                   
                   Expanded(
-                    child: Container(
-                      height: 56,
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: pillBg,
-                        borderRadius: BorderRadius.circular(28),
-                        border: Border.all(color: pillBorder, width: 1.2),
-                      ),
-                      child: SliderTheme(
-                        data: SliderThemeData(
-                          trackHeight: 3,
-                          thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 5),
-                          activeTrackColor: isDark ? AppColors.neonGreen : AppColors.lightTextPrimary,
-                          inactiveTrackColor: isDark ? AppColors.darkCardHover : AppColors.lightSurfaceVariant,
-                          thumbColor: isDark ? AppColors.neonGreen : AppColors.lightTextPrimary,
-                        ),
-                        child: Slider(
-                          value: dur.inMilliseconds > 0
-                              ? pos.inMilliseconds.toDouble().clamp(0, dur.inMilliseconds.toDouble())
-                              : 0,
-                          max: dur.inMilliseconds > 0 ? dur.inMilliseconds.toDouble() : 1,
-                          onChanged: (val) {
-                            handler.seek(Duration(milliseconds: val.toInt()));
-                          },
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(28),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                        child: Container(
+                          height: 56,
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          decoration: BoxDecoration(
+                            color: isDark ? Colors.white.withValues(alpha: 0.12) : Colors.black.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(28),
+                          ),
+                          child: SliderTheme(
+                            data: SliderThemeData(
+                              trackHeight: 3,
+                              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 5),
+                              activeTrackColor: isDark ? AppColors.neonGreen : AppColors.lightTextPrimary,
+                              inactiveTrackColor: isDark ? AppColors.darkCardHover : AppColors.lightSurfaceVariant,
+                              thumbColor: isDark ? AppColors.neonGreen : AppColors.lightTextPrimary,
+                            ),
+                            child: Slider(
+                              value: dur.inMilliseconds > 0
+                                  ? pos.inMilliseconds.toDouble().clamp(0, dur.inMilliseconds.toDouble())
+                                  : 0,
+                              max: dur.inMilliseconds > 0 ? dur.inMilliseconds.toDouble() : 1,
+                              onChanged: (val) {
+                                handler.seek(Duration(milliseconds: val.toInt()));
+                              },
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -737,10 +750,9 @@ class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
 
               const SizedBox(height: 16),
 
-          
+              // Row 2: Back button + Synced/Static toggle + Options button
               Row(
                 children: [
-                 
                   _buildCircleIconButton(
                     icon: Icons.arrow_back_rounded,
                     isDark: isDark,
@@ -748,70 +760,73 @@ class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
                   ),
                   const SizedBox(width: 12),
 
-                 
                   Expanded(
-                    child: Container(
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: pillBg,
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(color: pillBorder, width: 1.2),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: GestureDetector(
-                              onTap: () => setState(() => _isSyncedLyrics = true),
-                              child: Container(
-                                height: double.infinity,
-                                decoration: BoxDecoration(
-                                  color: _isSyncedLyrics ? syncedPillBg : Colors.transparent,
-                                  borderRadius: BorderRadius.circular(24),
-                                ),
-                                alignment: Alignment.center,
-                                child: Text(
-                                  'Synced',
-                                  style: googleSansFlex(
-                                    color: _isSyncedLyrics
-                                        ? syncedPillText
-                                        : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(24),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                        child: Container(
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: isDark ? Colors.white.withValues(alpha: 0.12) : Colors.black.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () => setState(() => _isSyncedLyrics = true),
+                                  child: Container(
+                                    height: double.infinity,
+                                    decoration: BoxDecoration(
+                                      color: _isSyncedLyrics ? syncedPillBg : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(24),
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      'Synced',
+                                      style: googleSansFlex(
+                                        color: _isSyncedLyrics
+                                            ? syncedPillText
+                                            : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                          ),
-                          Expanded(
-                            child: GestureDetector(
-                              onTap: () => setState(() => _isSyncedLyrics = false),
-                              child: Container(
-                                height: double.infinity,
-                                decoration: BoxDecoration(
-                                  color: !_isSyncedLyrics ? syncedPillBg : Colors.transparent,
-                                  borderRadius: BorderRadius.circular(24),
-                                ),
-                                alignment: Alignment.center,
-                                child: Text(
-                                  'Static',
-                                  style: googleSansFlex(
-                                    color: !_isSyncedLyrics
-                                        ? syncedPillText
-                                        : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () => setState(() => _isSyncedLyrics = false),
+                                  child: Container(
+                                    height: double.infinity,
+                                    decoration: BoxDecoration(
+                                      color: !_isSyncedLyrics ? syncedPillBg : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(24),
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      'Static',
+                                      style: googleSansFlex(
+                                        color: !_isSyncedLyrics
+                                            ? syncedPillText
+                                            : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
                   const SizedBox(width: 12),
 
-                 
                   _buildCircleIconButton(
                     icon: Icons.more_vert_rounded,
                     isDark: isDark,
@@ -833,51 +848,70 @@ class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
     double iconSize = 22,
     required VoidCallback onPressed,
   }) {
-    return Container(
-      width: 44,
-      height: 44,
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurfaceVariant : AppColors.lightSurfaceVariant,
-        shape: BoxShape.circle,
-        border: Border.all(
-          color: isDark ? AppColors.glassBorder : AppColors.glassDarkBorder,
-          width: 1.2,
-        ),
-      ),
-      child: IconButton(
-        onPressed: onPressed,
-        padding: EdgeInsets.zero,
-        icon: Icon(
-          icon,
-          size: iconSize,
-          color: isDark ? Colors.white : AppColors.lightTextPrimary,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(22),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+        child: Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: isDark ? Colors.white.withValues(alpha: 0.12) : Colors.black.withValues(alpha: 0.08),
+            shape: BoxShape.circle,
+          ),
+          child: IconButton(
+            onPressed: onPressed,
+            padding: EdgeInsets.zero,
+            icon: Icon(
+              icon,
+              size: iconSize,
+              color: isDark ? Colors.white : AppColors.lightTextPrimary,
+            ),
+          ),
         ),
       ),
     );
   }
 
-  
   Widget _buildPillButton({
     required IconData icon,
     required Color bgColor,
     required Color iconColor,
     required VoidCallback onPressed,
+    bool isGlass = false,
+    bool isDark = true,
   }) {
+    final effectiveBg = isGlass
+        ? (isDark ? Colors.white.withValues(alpha: 0.12) : Colors.black.withValues(alpha: 0.08))
+        : bgColor;
+
+    Widget child = Container(
+      width: 96,
+      height: 56,
+      decoration: BoxDecoration(
+        color: effectiveBg,
+        borderRadius: BorderRadius.circular(28),
+      ),
+      child: Icon(
+        icon,
+        color: iconColor,
+        size: 32,
+      ),
+    );
+
+    if (isGlass) {
+      child = ClipRRect(
+        borderRadius: BorderRadius.circular(28),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+          child: child,
+        ),
+      );
+    }
+
     return GestureDetector(
       onTap: onPressed,
-      child: Container(
-        width: 96,
-        height: 56,
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(28),
-        ),
-        child: Icon(
-          icon,
-          color: iconColor,
-          size: 32,
-        ),
-      ),
+      child: child,
     );
   }
 
