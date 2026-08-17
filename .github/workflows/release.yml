@@ -59,7 +59,7 @@ jobs:
         run: |
           # Only decode if secret is provided, otherwise fallback to debug signing
           if [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
-            echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/release.keystore
+            echo "${{ secrets.KEYSTORE_BASE64 }}" | tr -d '\n\r ' | base64 --decode > android/app/release.keystore
           fi
 
       - name: Extract Google Client ID and Build Split APKs
