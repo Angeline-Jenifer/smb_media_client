@@ -23,7 +23,9 @@ class GoogleDriveService {
   GoogleSignInAccount? get currentUser => _currentUser;
 
   GoogleSignIn get _signIn {
+    const clientId = String.fromEnvironment('GOOGLE_CLIENT_ID');
     _googleSignIn ??= GoogleSignIn(
+      clientId: clientId.isNotEmpty ? clientId : null,
       scopes: [drive.DriveApi.driveReadonlyScope],
     );
     return _googleSignIn!;

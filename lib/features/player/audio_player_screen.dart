@@ -145,8 +145,8 @@ class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
                   filter: ImageFilter.blur(sigmaX: 70, sigmaY: 70),
                   child: Container(
                     color: isDark
-                        ? AppColors.darkBackground.withValues(alpha: 0.85)
-                        : AppColors.lightBackground.withValues(alpha: 0.90),
+                        ? Colors.black.withValues(alpha: 0.55)
+                        : Colors.white.withValues(alpha: 0.45),
                   ),
                 ),
               ),

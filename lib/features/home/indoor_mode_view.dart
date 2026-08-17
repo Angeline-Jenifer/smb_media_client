@@ -51,14 +51,15 @@ class _IndoorModeViewState extends ConsumerState<IndoorModeView> {
         ),
 
         Consumer(builder: (context, ref, child) {
-          final currentTrack = ref.watch(currentTrackProvider);
-          if (currentTrack.value != null) {
+          final isPlaying = ref.watch(isPlayingProvider);
+          final isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
+          if (isPlaying && !isKeyboardOpen) {
             return const MiniPlayer();
           }
           return const SizedBox.shrink();
         }),
 
-        if (_selectedSegment == 0)
+        if (_selectedSegment == 0 && MediaQuery.of(context).viewInsets.bottom == 0)
           Consumer(builder: (context, ref, child) {
             final navIndex = ref.watch(homeNavProvider);
             return NavigationBar(

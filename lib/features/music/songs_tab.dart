@@ -23,6 +23,7 @@ class SongsTab extends ConsumerWidget {
           }).toList();
 
     return ListView.builder(
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.symmetric(vertical: 8),
       itemCount: filteredSongs.length,
       addAutomaticKeepAlives: false,

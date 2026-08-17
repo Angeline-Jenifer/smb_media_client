@@ -40,6 +40,7 @@ class VideoLibraryView extends ConsumerWidget {
         }
 
         return GridView.builder(
+          physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(16),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,

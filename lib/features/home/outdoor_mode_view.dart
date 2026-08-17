@@ -12,6 +12,7 @@ class OutdoorModeView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final navIndex = ref.watch(homeNavProvider);
+    final isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
 
     return Column(
       children: [
@@ -20,36 +21,37 @@ class OutdoorModeView extends ConsumerWidget {
         ),
       
         Consumer(builder: (context, ref, child) {
-          final currentTrack = ref.watch(currentTrackProvider);
-          if (currentTrack.value != null) {
+          final isPlaying = ref.watch(isPlayingProvider);
+          if (isPlaying && !isKeyboardOpen) {
             return const MiniPlayer();
           }
           return const SizedBox.shrink();
         }),
 
-        NavigationBar(
-          selectedIndex: navIndex,
-          onDestinationSelected: (index) {
-            ref.read(homeNavProvider.notifier).state = index;
-          },
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.home_outlined),
-              selectedIcon: Icon(Icons.home, color: AppColors.electricBlue),
-              label: 'Home',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.music_note_outlined),
-              selectedIcon: Icon(Icons.music_note, color: AppColors.electricBlue),
-              label: 'Songs',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.album_outlined),
-              selectedIcon: Icon(Icons.album, color: AppColors.electricBlue),
-              label: 'Albums',
-            ),
-          ],
-        ),
+        if (!isKeyboardOpen)
+          NavigationBar(
+            selectedIndex: navIndex,
+            onDestinationSelected: (index) {
+              ref.read(homeNavProvider.notifier).state = index;
+            },
+            destinations: const [
+              NavigationDestination(
+                icon: Icon(Icons.home_outlined),
+                selectedIcon: Icon(Icons.home, color: AppColors.electricBlue),
+                label: 'Home',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.music_note_outlined),
+                selectedIcon: Icon(Icons.music_note, color: AppColors.electricBlue),
+                label: 'Songs',
+              ),
+              NavigationDestination(
+                icon: Icon(Icons.album_outlined),
+                selectedIcon: Icon(Icons.album, color: AppColors.electricBlue),
+                label: 'Albums',
+              ),
+            ],
+          ),
       ],
     );
   }

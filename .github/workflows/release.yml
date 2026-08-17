@@ -1,0 +1,108 @@
+name: Build and Release APK
+
+on:
+  push:
+    paths:
+      - 'version.json'
+    branches:
+      - main
+      - master
+
+jobs:
+  build_and_release:
+    name: Build & Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Needed for changelog generation
+
+      - name: Read Version
+        id: version
+        run: |
+          VERSION=$(jq -r '.version' version.json)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+          # Compute a strictly increasing build number from semver parts
+          # e.g. 1.2.3 → 1*10000 + 2*100 + 3 = 10203
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+          BUILD_NUMBER=$(( MAJOR * 10000 + MINOR * 100 + PATCH ))
+          echo "BUILD_NUMBER=$BUILD_NUMBER" >> $GITHUB_ENV
+          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+
+      - name: Sync Version to pubspec.yaml
+        run: |
+          sed -i "s/^version: .*/version: ${{ env.VERSION }}+${{ env.BUILD_NUMBER }}/" pubspec.yaml
+
+      - name: Setup Java with Gradle Caching
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+          cache: 'gradle' # ⚡ This caches the heavy C++ Firebase builds!
+
+      - name: Setup Flutter with Caching
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true # ⚡ This caches the Flutter SDK and dependencies!
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Decode Keystore
+        run: |
+          # Only decode if secret is provided, otherwise fallback to debug signing
+          if [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+            echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/release.keystore
+          fi
+
+      - name: Extract Google Client ID and Build Split APKs
+        # 📦 --split-per-abi builds 3 separate, highly optimized APKs (approx 15MB each)
+        # instead of one massive 53MB Universal APK.
+        run: |
+          CLIENT_ID=$(echo '${{ secrets.GOOGLE_CLIENT }}' | jq -r '.installed.client_id')
+          flutter build apk --release --split-per-abi \
+            --build-name=${{ env.VERSION }} \
+            --build-number=${{ env.BUILD_NUMBER }} \
+            --dart-define=GOOGLE_CLIENT_ID=$CLIENT_ID
+        env:
+          KEYSTORE_PATH: release.keystore
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+
+      - name: Generate Changelog
+        id: changelog
+        run: |
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -z "$PREVIOUS_TAG" ]; then
+            CHANGELOG=$(git log --pretty=format:"* %s (%h)")
+          else
+            CHANGELOG=$(git log ${PREVIOUS_TAG}..HEAD --pretty=format:"* %s (%h)")
+          fi
+          
+          # Escape newlines for GitHub Env
+          echo "CHANGELOG<<EOF" >> $GITHUB_ENV
+          echo "$CHANGELOG" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: Rexon HomeClient v${{ steps.version.outputs.version }}
+          body: |
+            ## What's New
+            ${{ env.CHANGELOG }}
+            
+            ---
+            *Note: Please download the `arm64-v8a` APK for 99% of modern Android devices.*
+          files: build/app/outputs/flutter-apk/*-release.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -135,6 +135,7 @@ class _MusicHomeViewState extends ConsumerState<MusicHomeView> {
 
       
         return CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             
             const SliverToBoxAdapter(

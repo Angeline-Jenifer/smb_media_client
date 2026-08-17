@@ -45,13 +45,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           children: [
             _buildAppBar(context, mode),
             Expanded(
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 400),
-                switchInCurve: Curves.easeOutCubic,
-                switchOutCurve: Curves.easeInCubic,
-                child: mode == AppMode.outdoor
-                    ? const OutdoorModeView(key: ValueKey('outdoor'))
-                    : const IndoorModeView(key: ValueKey('indoor')),
+              child: RefreshIndicator(
+                onRefresh: () async {
+                  await ref.read(mediaListProvider.notifier).fetchMedia();
+                },
+                color: AppColors.electricBlue,
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 400),
+                  switchInCurve: Curves.easeOutCubic,
+                  switchOutCurve: Curves.easeInCubic,
+                  child: mode == AppMode.outdoor
+                      ? const OutdoorModeView(key: ValueKey('outdoor'))
+                      : const IndoorModeView(key: ValueKey('indoor')),
+                ),
               ),
             ),
           ],
@@ -94,19 +100,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
 
-              IconButton(
-                onPressed: () {
-                  ref.read(mediaListProvider.notifier).fetchMedia();
-                },
-                icon: Icon(
-                  Icons.refresh_rounded,
-                  color: isDark ? Colors.white : AppColors.lightTextPrimary,
-                  size: 24,
-                ),
-                tooltip: 'Refresh library',
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
-              ),
 
             
               _buildThemeToggle(),
@@ -125,10 +118,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             decoration: BoxDecoration(
               color: isDark ? AppColors.darkSurfaceVariant : AppColors.lightSurfaceVariant,
               borderRadius: BorderRadius.circular(28),
-              border: Border.all(
-                color: isDark ? AppColors.glassBorder : AppColors.glassDarkBorder,
-                width: 1.2,
-              ),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 18),
             child: Row(
@@ -142,6 +131,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 Expanded(
                   child: TextField(
                     controller: _searchController,
+                    onTapOutside: (event) => FocusManager.instance.primaryFocus?.unfocus(),
                     onChanged: (value) {
                       ref.read(searchQueryProvider.notifier).state = value;
                     },
@@ -206,13 +196,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         decoration: BoxDecoration(
           color: isDark ? AppColors.darkSurfaceVariant : AppColors.lightSurfaceVariant,
           borderRadius: BorderRadius.circular(24),
-          border: Border.all(
-            color: isDark ? AppColors.glassBorder : AppColors.glassDarkBorder,
-            width: 1.2,
-          ),
         ),
         child: Icon(
-          isOutdoor ? Icons.cloud_rounded : Icons.wifi_rounded,
+          isOutdoor ? Icons.cloud_rounded : Icons.home_rounded,
           color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
           size: 20,
         ),
