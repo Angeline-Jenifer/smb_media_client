@@ -18,6 +18,7 @@ class App extends ConsumerWidget {
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: themeMode,
+      themeAnimationDuration: Duration.zero,
       routerConfig: appRouter,
       builder: (context, child) {
         return DefaultTextStyle(

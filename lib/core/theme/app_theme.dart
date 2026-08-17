@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import '../constants/app_colors.dart';
 import '../constants/app_typography.dart';
 
-
 class AppTheme {
   AppTheme._();
-
 
   static ThemeData get dark => ThemeData(
         fontFamily: 'GoogleSansFlex',
@@ -29,18 +27,16 @@ class AppTheme {
           onError: Colors.white,
         ),
         textTheme: AppTypography.textTheme.apply(
-          fontFamily: 'GoogleSansFlex',
           bodyColor: AppColors.darkTextPrimary,
           displayColor: AppColors.darkTextPrimary,
         ),
-        appBarTheme: const AppBarTheme(
+        appBarTheme: AppBarTheme(
           backgroundColor: Colors.transparent,
           elevation: 0,
           scrolledUnderElevation: 0,
           centerTitle: false,
-          iconTheme: IconThemeData(color: AppColors.darkTextPrimary),
-          titleTextStyle: TextStyle(
-            fontFamily: 'GoogleSansFlex',
+          iconTheme: const IconThemeData(color: AppColors.darkTextPrimary),
+          titleTextStyle: googleSansFlex(
             color: AppColors.darkTextPrimary,
             fontSize: 20,
             fontWeight: FontWeight.w600,
@@ -66,15 +62,13 @@ class AppTheme {
           indicatorColor: AppColors.neonGreen.withValues(alpha: 0.20),
           labelTextStyle: WidgetStateProperty.resolveWith((states) {
             if (states.contains(WidgetState.selected)) {
-              return const TextStyle(
-                fontFamily: 'GoogleSansFlex',
+              return googleSansFlex(
                 color: AppColors.neonGreen,
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
               );
             }
-            return const TextStyle(
-              fontFamily: 'GoogleSansFlex',
+            return googleSansFlex(
               color: AppColors.darkTextTertiary,
               fontSize: 12,
               fontWeight: FontWeight.w400,
@@ -107,7 +101,7 @@ class AppTheme {
           ),
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          hintStyle: const TextStyle(fontFamily: 'GoogleSansFlex', color: AppColors.darkTextTertiary),
+          hintStyle: googleSansFlex(color: AppColors.darkTextTertiary),
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
@@ -116,8 +110,7 @@ class AppTheme {
             elevation: 0,
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
             shape: const StadiumBorder(),
-            textStyle: const TextStyle(
-              fontFamily: 'GoogleSansFlex',
+            textStyle: googleSansFlex(
               fontSize: 16,
               fontWeight: FontWeight.w600,
             ),
@@ -134,14 +127,14 @@ class AppTheme {
         chipTheme: ChipThemeData(
           backgroundColor: AppColors.darkSurfaceVariant,
           selectedColor: AppColors.darkTextPrimary.withValues(alpha: 0.2),
-          labelStyle: const TextStyle(fontFamily: 'GoogleSansFlex', color: AppColors.darkTextPrimary),
+          labelStyle: googleSansFlex(color: AppColors.darkTextPrimary),
           side: BorderSide.none,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         ),
         snackBarTheme: SnackBarThemeData(
           backgroundColor: AppColors.darkSurfaceVariant,
-          contentTextStyle: const TextStyle(fontFamily: 'GoogleSansFlex', color: AppColors.darkTextPrimary),
+          contentTextStyle: googleSansFlex(color: AppColors.darkTextPrimary),
           behavior: SnackBarBehavior.floating,
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

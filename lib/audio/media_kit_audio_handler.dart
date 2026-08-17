@@ -91,6 +91,18 @@ class MediaKitAudioHandler extends BaseAudioHandler with QueueHandler, SeekHandl
     _updatePlaybackState();
   }
 
+  void updateTrackMetadata(MediaItem updatedItem) {
+    final index = _queue.indexWhere((e) => e.extras?['mediaId'] == updatedItem.extras?['mediaId']);
+    if (index != -1) {
+      _queue[index] = updatedItem;
+      queue.add(List.from(_queue));
+    }
+    
+    if (mediaItem.value?.extras?['mediaId'] == updatedItem.extras?['mediaId']) {
+      mediaItem.add(updatedItem);
+    }
+  }
+
   @override
   Future<void> play() async {
     await _player.play();

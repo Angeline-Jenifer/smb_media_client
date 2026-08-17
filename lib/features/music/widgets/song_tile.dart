@@ -15,6 +15,8 @@ import '../../../services/local_proxy_server.dart';
 import '../../../providers/media_list_provider.dart';
 import '../../../providers/recently_played_provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import '../../../core/widgets/animated_equalizer.dart';
+
 class SongTile extends ConsumerWidget {
   final MediaItemModel song;
   final List<MediaItemModel> playlist;
@@ -31,13 +33,23 @@ class SongTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final currentTrack = ref.watch(currentTrackProvider);
+    final playbackState = ref.watch(playbackStateProvider);
+
     final isCurrentTrack = currentTrack.when(
       data: (item) => item?.extras?['mediaId'] == song.id,
       loading: () => false,
       error: (_, __) => false,
     );
+    final isPlaying = playbackState.when(
+      data: (state) => state.playing,
+      loading: () => false,
+      error: (_, __) => false,
+    );
 
-    if (song.albumArtUrl == null && song.fileName.toLowerCase().endsWith('.flac')) {
+    final lowerName = song.fileName.toLowerCase();
+    final needsExtraction = song.albumArtUrl == null &&
+        (lowerName.endsWith('.flac') || lowerName.endsWith('.opus') || lowerName.endsWith('.ogg'));
+    if (needsExtraction) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         ref.read(mediaListProvider.notifier).extractMetadata(song);
       });
@@ -70,15 +82,21 @@ class SongTile extends ConsumerWidget {
                 )
               : null,
         ),
-        child: song.albumArtUrl == null || isCurrentTrack
-            ? Icon(
-                isCurrentTrack ? Icons.equalizer : Icons.music_note,
-                color: isCurrentTrack
-                    ? AppColors.neonGreen
-                    : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
-                size: 20,
+        child: isCurrentTrack
+            ? Center(
+                child: AnimatedEqualizer(
+                  color: AppColors.neonGreen,
+                  size: 18,
+                  isPlaying: isPlaying,
+                ),
               )
-            : null,
+            : (song.albumArtUrl == null
+                ? Icon(
+                    Icons.music_note,
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                    size: 20,
+                  )
+                : null),
       ),
       title: Text(
         song.title,

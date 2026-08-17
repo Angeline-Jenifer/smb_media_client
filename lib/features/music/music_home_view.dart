@@ -276,15 +276,18 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       child: Row(
         children: [
           Text(
             title,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+            style: googleSansFlex(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: isDark ? Colors.white : AppColors.lightTextPrimary,
+            ),
           ),
           if (count != null) ...[
             const SizedBox(width: 8),
@@ -560,7 +563,7 @@ class _DailyMixCard extends ConsumerWidget {
                   mix.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: googleSansFlex(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
@@ -571,7 +574,7 @@ class _DailyMixCard extends ConsumerWidget {
                   mix.subtitle.isEmpty ? 'Curated Playlist' : mix.subtitle,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
+                  style: googleSansFlex(
                     fontSize: 11,
                     fontWeight: FontWeight.w400,
                     color: Colors.white.withValues(alpha: 0.82),
@@ -623,7 +626,7 @@ class _QuickPlayPill extends StatelessWidget {
             const SizedBox(width: 8),
             Text(
               label,
-              style: TextStyle(
+              style: googleSansFlex(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
                 color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,

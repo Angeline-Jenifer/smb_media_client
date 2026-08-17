@@ -11,6 +11,8 @@ import '../../audio/audio_provider.dart';
 import '../../extensions/duration_extension.dart';
 import 'package:audio_session/audio_session.dart' as audio_session;
 
+import '../../core/widgets/animated_equalizer.dart';
+
 class _LyricLine {
   final Duration time;
   final String text;
@@ -117,7 +119,7 @@ class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
                 break;
               }
             }
-            if (activeLyricIndex >= 0) {
+            if (activeLyricIndex >= 0 && _showLyrics) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 _scrollToLyric(activeLyricIndex);
               });
@@ -152,28 +154,42 @@ class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
             
               SafeArea(
                 child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 350),
+                  duration: const Duration(milliseconds: 220),
+                  switchInCurve: Curves.easeOutCubic,
+                  switchOutCurve: Curves.easeInCubic,
+                  transitionBuilder: (child, animation) {
+                    return FadeTransition(
+                      opacity: animation,
+                      child: child,
+                    );
+                  },
                   child: _showLyrics
-                      ? _buildLyricsView(
-                          context,
-                          item,
-                          rawLyrics,
-                          activeLyricIndex,
-                          pos,
-                          dur,
-                          isPlaying,
-                          handler,
-                          isDark,
+                      ? RepaintBoundary(
+                          key: const ValueKey('LyricsViewBoundary'),
+                          child: _buildLyricsView(
+                            context,
+                            item,
+                            rawLyrics,
+                            activeLyricIndex,
+                            pos,
+                            dur,
+                            isPlaying,
+                            handler,
+                            isDark,
+                          ),
                         )
-                      : _buildPlayerView(
-                          context,
-                          item,
-                          pos,
-                          dur,
-                          isPlaying,
-                          handler,
-                          isDark,
-                          audioParams,
+                      : RepaintBoundary(
+                          key: const ValueKey('PlayerViewBoundary'),
+                          child: _buildPlayerView(
+                            context,
+                            item,
+                            pos,
+                            dur,
+                            isPlaying,
+                            handler,
+                            isDark,
+                            audioParams,
+                          ),
                         ),
                 ),
               ),
@@ -197,8 +213,8 @@ class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
     bool isDark,
     AudioParams? audioParams,
   ) {
-    final primaryPillBg = isDark ? AppColors.neonGreen : AppColors.lightTextPrimary;
-    final primaryPillIcon = isDark ? Colors.black : Colors.white;
+    final primaryPillBg = AppColors.neonGreen;
+    final primaryPillIcon = Colors.black;
 
     final secondaryPillBg = isDark ? AppColors.darkSurfaceVariant : AppColors.lightSurfaceVariant;
     final secondaryPillIcon = isDark ? Colors.white : AppColors.lightTextPrimary;
@@ -373,9 +389,9 @@ class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
                   trackHeight: 3,
                   thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
                   overlayShape: const RoundSliderOverlayShape(overlayRadius: 14),
-                  activeTrackColor: isDark ? AppColors.neonGreen : AppColors.lightTextPrimary,
+                  activeTrackColor: AppColors.neonGreen,
                   inactiveTrackColor: isDark ? AppColors.darkSurfaceVariant : AppColors.lightSurfaceVariant,
-                  thumbColor: isDark ? AppColors.neonGreen : AppColors.lightTextPrimary,
+                  thumbColor: AppColors.neonGreen,
                 ),
                 child: Slider(
                   value: dur.inMilliseconds > 0
@@ -413,7 +429,7 @@ class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
                           child: Text(
                             _getAudioQualityBadge(item, audioParams, dur),
                             style: googleSansFlex(
-                              color: isDark ? AppColors.neonGreen : AppColors.lightTextPrimary,
+                              color: AppColors.neonGreen,
                               fontSize: 11,
                               fontWeight: FontWeight.w500,
                             ),
@@ -498,7 +514,7 @@ class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
                     icon: Icon(
                       Icons.shuffle_rounded,
                       color: _isShuffle
-                          ? (isDark ? AppColors.neonGreen : AppColors.lightTextPrimary)
+                          ? AppColors.neonGreen
                           : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
                       size: 22,
                     ),
@@ -508,7 +524,7 @@ class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
                     icon: Icon(
                       Icons.repeat_rounded,
                       color: _isRepeat
-                          ? (isDark ? AppColors.neonGreen : AppColors.lightTextPrimary)
+                          ? AppColors.neonGreen
                           : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary),
                       size: 22,
                     ),
@@ -546,11 +562,11 @@ class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
     AudioHandler handler,
     bool isDark,
   ) {
-    final playPillBg = isDark ? AppColors.neonGreen : AppColors.lightTextPrimary;
-    final playPillIcon = isDark ? Colors.black : Colors.white;
+    final playPillBg = AppColors.neonGreen;
+    final playPillIcon = Colors.black;
 
-    final syncedPillBg = isDark ? AppColors.neonGreen : AppColors.lightTextPrimary;
-    final syncedPillText = isDark ? Colors.black : Colors.white;
+    final syncedPillBg = AppColors.neonGreen;
+    final syncedPillText = Colors.black;
 
     return Column(
       key: const ValueKey('LyricsView'),
@@ -558,80 +574,96 @@ class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
       
         // Top Mini Player Header Bar
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(32),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: isDark ? Colors.white.withValues(alpha: 0.12) : Colors.black.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(32),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 42,
-                      height: 42,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(22),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                    child: Container(
+                      height: 44,
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                       decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        image: item.artUri != null
-                            ? DecorationImage(
-                                image: item.artUri!.toString().startsWith('file://')
-                                    ? FileImage(File(item.artUri!.toString().replaceFirst('file://', ''))) as ImageProvider
-                                    : CachedNetworkImageProvider(item.artUri!.toString()),
-                                fit: BoxFit.cover,
-                              )
-                            : null,
-                        color: isDark ? AppColors.darkSurfaceVariant : AppColors.lightSurfaceVariant,
+                        color: isDark ? Colors.white.withValues(alpha: 0.12) : Colors.black.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(22),
                       ),
-                      child: item.artUri == null
-                          ? Icon(
-                              Icons.music_note_rounded,
-                              size: 20,
-                              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-                            )
-                          : null,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
+                      child: Row(
                         children: [
-                          Text(
-                            item.title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: googleSansFlex(
-                              color: isDark ? Colors.white : AppColors.lightTextPrimary,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
+                          Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              image: item.artUri != null
+                                  ? DecorationImage(
+                                      image: item.artUri!.toString().startsWith('file://')
+                                          ? FileImage(File(item.artUri!.toString().replaceFirst('file://', ''))) as ImageProvider
+                                          : CachedNetworkImageProvider(item.artUri!.toString()),
+                                      fit: BoxFit.cover,
+                                    )
+                                  : null,
+                              color: isDark ? AppColors.darkSurfaceVariant : AppColors.lightSurfaceVariant,
+                            ),
+                            child: item.artUri == null
+                                ? Icon(
+                                    Icons.music_note_rounded,
+                                    size: 18,
+                                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                                  )
+                                : null,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  item.title,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: googleSansFlex(
+                                    color: isDark ? Colors.white : AppColors.lightTextPrimary,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                Text(
+                                  item.artist ?? 'Unknown Artist',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: googleSansFlex(
+                                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          Text(
-                            item.artist ?? 'Unknown Artist',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: googleSansFlex(
-                              color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-                              fontSize: 13,
-                            ),
+                          AnimatedEqualizer(
+                            color: AppColors.neonGreen,
+                            size: 16,
+                            isPlaying: isPlaying,
                           ),
+                          const SizedBox(width: 6),
                         ],
                       ),
                     ),
-                    Icon(
-                      Icons.bar_chart_rounded,
-                      color: isDark ? Colors.white : AppColors.lightTextPrimary,
-                      size: 24,
-                    ),
-                    const SizedBox(width: 8),
-                  ],
+                  ),
                 ),
               ),
-            ),
+              const SizedBox(width: 8),
+              _buildCircleIconButton(
+                icon: Icons.music_note_rounded,
+                isDark: isDark,
+                iconSize: 20,
+                onPressed: () => setState(() => _showLyrics = false),
+              ),
+            ],
           ),
         ),
 
@@ -654,7 +686,7 @@ class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
                           duration: const Duration(milliseconds: 300),
                           style: googleSansFlex(
                             color: isCurrent
-                                ? (isDark ? AppColors.neonGreen : AppColors.lightTextPrimary)
+                                ? AppColors.neonGreen
                                 : (isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary.withValues(alpha: 0.6)),
                             fontSize: isCurrent ? 24 : 19,
                             fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w500,
@@ -727,9 +759,9 @@ class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
                             data: SliderThemeData(
                               trackHeight: 3,
                               thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 5),
-                              activeTrackColor: isDark ? AppColors.neonGreen : AppColors.lightTextPrimary,
+                              activeTrackColor: AppColors.neonGreen,
                               inactiveTrackColor: isDark ? AppColors.darkCardHover : AppColors.lightSurfaceVariant,
-                              thumbColor: isDark ? AppColors.neonGreen : AppColors.lightTextPrimary,
+                              thumbColor: AppColors.neonGreen,
                             ),
                             child: Slider(
                               value: dur.inMilliseconds > 0
@@ -750,16 +782,9 @@ class _AudioPlayerScreenState extends ConsumerState<AudioPlayerScreen> {
 
               const SizedBox(height: 16),
 
-              // Row 2: Back button + Synced/Static toggle + Options button
+              // Row 2: Synced/Static toggle + Options button
               Row(
                 children: [
-                  _buildCircleIconButton(
-                    icon: Icons.arrow_back_rounded,
-                    isDark: isDark,
-                    onPressed: () => setState(() => _showLyrics = false),
-                  ),
-                  const SizedBox(width: 12),
-
                   Expanded(
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(24),

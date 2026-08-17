@@ -1,10 +1,13 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:audio_service/audio_service.dart';
 import '../models/media_item_model.dart';
 import '../services/google_drive_service.dart';
 import '../services/local_storage_service.dart';
 import '../services/smb_service.dart';
 import '../core/utils/flac_metadata_extractor.dart';
+import '../core/utils/opus_metadata_extractor.dart';
+import '../audio/audio_provider.dart';
 import 'mode_provider.dart';
 
 
@@ -153,38 +156,79 @@ class MediaListNotifier extends StateNotifier<AsyncValue<List<MediaItemModel>>> 
 
   final Set<String> _extractingIds = {};
 
+  static const _extractableExtensions = ['.flac', '.opus', '.ogg'];
+
+  static bool _isExtractable(String fileName) {
+    final lower = fileName.toLowerCase();
+    return _extractableExtensions.any((ext) => lower.endsWith(ext));
+  }
+
   Future<void> extractMetadata(MediaItemModel item) async {
-    if (!item.fileName.toLowerCase().endsWith('.flac')) return;
+    if (!_isExtractable(item.fileName)) return;
     if (item.albumArtUrl != null) return; 
     if (_extractingIds.contains(item.id)) return; 
 
     _extractingIds.add(item.id);
     
     try {
-      FlacMetadata? metadata;
+      final lowerName = item.fileName.toLowerCase();
+      final isFlac = lowerName.endsWith('.flac');
+      final isOpus = lowerName.endsWith('.opus') || lowerName.endsWith('.ogg');
+
+      debugPrint('[MediaList] extractMetadata: ${item.fileName} isFlac=$isFlac isOpus=$isOpus source=${item.source}');
+
+      String? title;
+      String? artist;
+      String? album;
+      String? lyrics;
+      String? albumArtUrl;
       String cacheKey;
 
       if (item.source == MediaSource.smb) {
         final share = item.sourceId.split('/')[0];
-        metadata = await FlacMetadataExtractor.extractFromSmb(share, item.filePath);
         cacheKey = item.filePath;
+
+        if (isFlac) {
+          final m = await FlacMetadataExtractor.extractFromSmb(share, item.filePath);
+          if (m != null) {
+            title = m.title; artist = m.artist; album = m.album;
+            lyrics = m.lyrics; albumArtUrl = m.albumArtUrl;
+          }
+        } else if (isOpus) {
+          final m = await OpusMetadataExtractor.extractFromSmb(share, item.filePath);
+          if (m != null) {
+            title = m.title; artist = m.artist; album = m.album;
+            lyrics = m.lyrics; albumArtUrl = m.albumArtUrl;
+          }
+        }
       } else if (item.source == MediaSource.googleDrive) {
         final headers = await GoogleDriveService.instance.getStreamHeaders();
-        metadata = await FlacMetadataExtractor.extractFromDrive(item.sourceId, item.fileName, headers);
-        cacheKey = item.sourceId; 
+        cacheKey = item.sourceId;
+
+        if (isFlac) {
+          final m = await FlacMetadataExtractor.extractFromDrive(item.sourceId, item.fileName, headers);
+          if (m != null) {
+            title = m.title; artist = m.artist; album = m.album;
+            lyrics = m.lyrics; albumArtUrl = m.albumArtUrl;
+          }
+        } else if (isOpus) {
+          final m = await OpusMetadataExtractor.extractFromDrive(item.sourceId, item.fileName, headers);
+          if (m != null) {
+            title = m.title; artist = m.artist; album = m.album;
+            lyrics = m.lyrics; albumArtUrl = m.albumArtUrl;
+          }
+        }
       } else {
         return;
       }
       
-      if (metadata != null) {
-        final m = metadata;
-      
+      if (title != null || artist != null || album != null || lyrics != null || albumArtUrl != null) {
         LocalStorageService.instance.saveCachedMetadata(cacheKey, {
-          'title': m.title,
-          'artist': m.artist,
-          'album': m.album,
-          'lyrics': m.lyrics,
-          'albumArtUrl': m.albumArtUrl,
+          'title': title,
+          'artist': artist,
+          'album': album,
+          'lyrics': lyrics,
+          'albumArtUrl': albumArtUrl,
         });
 
         state.whenData((currentItems) {
@@ -192,15 +236,59 @@ class MediaListNotifier extends StateNotifier<AsyncValue<List<MediaItemModel>>> 
           if (index != -1) {
             final newItems = List<MediaItemModel>.from(currentItems);
             newItems[index] = newItems[index].copyWith(
-              title: m.title,
-              artist: m.artist,
-              album: m.album,
-              lyrics: m.lyrics,
-              albumArtUrl: m.albumArtUrl,
+              title: title,
+              artist: artist,
+              album: album,
+              lyrics: lyrics,
+              albumArtUrl: albumArtUrl,
             );
             state = AsyncValue.data(newItems);
           }
         });
+
+        // Dynamically update the active track in the Audio Service if it's currently playing
+        try {
+          final audioHandler = _ref.read(audioHandlerProvider);
+          final currentItem = audioHandler.mediaItem.value;
+          
+          MediaItem? updatedItem;
+          
+          if (currentItem != null && currentItem.extras?['mediaId'] == item.id) {
+            updatedItem = currentItem.copyWith(
+              title: title ?? currentItem.title,
+              artist: artist ?? currentItem.artist,
+              album: album ?? currentItem.album,
+              artUri: albumArtUrl != null ? Uri.parse(albumArtUrl) : currentItem.artUri,
+              extras: {
+                ...?currentItem.extras,
+                'lyrics': lyrics ?? currentItem.extras?['lyrics'],
+              },
+            );
+          } else {
+            // Check if it's in the queue at least
+            final queue = audioHandler.queue.value;
+            final queueIndex = queue.indexWhere((e) => e.extras?['mediaId'] == item.id);
+            if (queueIndex != -1) {
+              final qItem = queue[queueIndex];
+              updatedItem = qItem.copyWith(
+                title: title ?? qItem.title,
+                artist: artist ?? qItem.artist,
+                album: album ?? qItem.album,
+                artUri: albumArtUrl != null ? Uri.parse(albumArtUrl) : qItem.artUri,
+                extras: {
+                  ...?qItem.extras,
+                  'lyrics': lyrics ?? qItem.extras?['lyrics'],
+                },
+              );
+            }
+          }
+          
+          if (updatedItem != null) {
+            audioHandler.updateTrackMetadata(updatedItem);
+          }
+        } catch (e) {
+          debugPrint('[MediaList] Error updating audio handler metadata: $e');
+        }
       }
     } catch (_) {} finally {
       _extractingIds.remove(item.id);

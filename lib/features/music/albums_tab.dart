@@ -5,7 +5,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:audio_service/audio_service.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_typography.dart';
-import '../../core/widgets/shimmer_loader.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../models/media_item_model.dart';
 import '../../providers/media_list_provider.dart';

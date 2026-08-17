@@ -11,6 +11,7 @@ TextStyle googleSansFlex({
 }) {
   return TextStyle(
     fontFamily: 'GoogleSansFlex',
+    fontFamilyFallback: const ['sans-serif'],
     fontSize: fontSize,
     fontWeight: fontWeight,
     letterSpacing: letterSpacing,
