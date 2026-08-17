@@ -15,6 +15,7 @@ class MediaItemModel {
   final String? mimeType;
 
   final String sourceId;
+  final bool isMetadataExtracted;
 
   const MediaItemModel({
     required this.id,
@@ -31,6 +32,7 @@ class MediaItemModel {
     this.fileSize,
     this.mimeType,
     required this.sourceId,
+    this.isMetadataExtracted = false,
   });
 
 
@@ -70,6 +72,7 @@ class MediaItemModel {
       fileSize: fileSize,
       mimeType: mimeType,
       lyrics: null,
+      isMetadataExtracted: false,
     );
   }
 
@@ -80,6 +83,7 @@ class MediaItemModel {
     String? albumArtUrl,
     String? lyrics,
     Duration? duration,
+    bool? isMetadataExtracted,
   }) {
     return MediaItemModel(
       id: id,
@@ -96,6 +100,7 @@ class MediaItemModel {
       sourceId: sourceId,
       fileSize: fileSize,
       mimeType: mimeType,
+      isMetadataExtracted: isMetadataExtracted ?? this.isMetadataExtracted,
     );
   }
 
@@ -124,6 +129,7 @@ class MediaItemModel {
         'fileSize': fileSize,
         'mimeType': mimeType,
         'sourceId': sourceId,
+        'isMetadataExtracted': isMetadataExtracted,
       };
 
   factory MediaItemModel.fromJson(Map<String, dynamic> json) {
@@ -150,6 +156,7 @@ class MediaItemModel {
       fileSize: json['fileSize'] as int?,
       mimeType: json['mimeType'] as String?,
       sourceId: (json['sourceId'] as String?) ?? '',
+      isMetadataExtracted: json['isMetadataExtracted'] as bool? ?? false,
     );
   }
 

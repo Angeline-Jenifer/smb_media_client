@@ -65,7 +65,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final isOutdoor = mode == AppMode.outdoor;
 
     final title = isOutdoor ? 'Outdoor' : 'Indoor';
-    final subtitle = isOutdoor ? 'Google Drive' : 'Samba Network';
     final searchQuery = ref.watch(searchQueryProvider);
 
     return Padding(
@@ -89,15 +88,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         fontWeight: FontWeight.w700,
                         height: 1.1,
                         color: isDark ? Colors.white : AppColors.lightTextPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      subtitle,
-                      style: googleSansFlex(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w400,
-                        color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
                       ),
                     ),
                   ],

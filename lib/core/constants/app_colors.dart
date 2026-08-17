@@ -46,6 +46,7 @@ class AppColors {
   static const glassWhite = Color(0x1AFFFFFF);
   static const glassBorder = Color(0x22FFFFFF);
   static const glassDarkBorder = Color(0x0F000000);
+  static const glassSurface = Color(0x400C0C0C); 
 
   
   static const primaryGradient = LinearGradient(

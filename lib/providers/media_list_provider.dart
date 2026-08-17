@@ -105,6 +105,7 @@ class MediaListNotifier extends StateNotifier<AsyncValue<List<MediaItemModel>>> 
           album: cached['album'] as String?,
           lyrics: cached['lyrics'] as String?,
           albumArtUrl: cached['albumArtUrl'] as String?,
+          isMetadataExtracted: true,
         );
       }
     }
@@ -144,6 +145,7 @@ class MediaListNotifier extends StateNotifier<AsyncValue<List<MediaItemModel>>> 
             album: cached['album'] as String?,
             lyrics: cached['lyrics'] as String?,
             albumArtUrl: cached['albumArtUrl'] as String?,
+            isMetadataExtracted: true,
           );
         }
       }
@@ -165,7 +167,7 @@ class MediaListNotifier extends StateNotifier<AsyncValue<List<MediaItemModel>>> 
 
   Future<void> extractMetadata(MediaItemModel item) async {
     if (!_isExtractable(item.fileName)) return;
-    if (item.albumArtUrl != null) return; 
+    if (item.isMetadataExtracted) return; 
     if (_extractingIds.contains(item.id)) return; 
 
     _extractingIds.add(item.id);
@@ -222,32 +224,32 @@ class MediaListNotifier extends StateNotifier<AsyncValue<List<MediaItemModel>>> 
         return;
       }
       
-      if (title != null || artist != null || album != null || lyrics != null || albumArtUrl != null) {
-        LocalStorageService.instance.saveCachedMetadata(cacheKey, {
-          'title': title,
-          'artist': artist,
-          'album': album,
-          'lyrics': lyrics,
-          'albumArtUrl': albumArtUrl,
-        });
+      LocalStorageService.instance.saveCachedMetadata(cacheKey, {
+        'title': title,
+        'artist': artist,
+        'album': album,
+        'lyrics': lyrics,
+        'albumArtUrl': albumArtUrl,
+      });
 
-        state.whenData((currentItems) {
-          final index = currentItems.indexWhere((e) => e.id == item.id);
-          if (index != -1) {
-            final newItems = List<MediaItemModel>.from(currentItems);
-            newItems[index] = newItems[index].copyWith(
-              title: title,
-              artist: artist,
-              album: album,
-              lyrics: lyrics,
-              albumArtUrl: albumArtUrl,
-            );
-            state = AsyncValue.data(newItems);
-          }
-        });
+      state.whenData((currentItems) {
+        final index = currentItems.indexWhere((e) => e.id == item.id);
+        if (index != -1) {
+          final newItems = List<MediaItemModel>.from(currentItems);
+          newItems[index] = newItems[index].copyWith(
+            title: title,
+            artist: artist,
+            album: album,
+            lyrics: lyrics,
+            albumArtUrl: albumArtUrl,
+            isMetadataExtracted: true,
+          );
+          state = AsyncValue.data(newItems);
+        }
+      });
 
-        // Dynamically update the active track in the Audio Service if it's currently playing
-        try {
+      // Dynamically update the active track in the Audio Service if it's currently playing
+      try {
           final audioHandler = _ref.read(audioHandlerProvider);
           final currentItem = audioHandler.mediaItem.value;
           
@@ -289,7 +291,6 @@ class MediaListNotifier extends StateNotifier<AsyncValue<List<MediaItemModel>>> 
         } catch (e) {
           debugPrint('[MediaList] Error updating audio handler metadata: $e');
         }
-      }
     } catch (_) {} finally {
       _extractingIds.remove(item.id);
     }

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/connectivity_service.dart';
 import '../services/local_storage_service.dart';
+import '../services/smb_service.dart';
 
 
 enum AppMode { outdoor, indoor }
@@ -15,12 +16,37 @@ class ModeNotifier extends StateNotifier<AppMode> {
 
   ModeNotifier(this._ref) : super(AppMode.outdoor) {
     _loadDefault();
+    _autoDetectMode();
   }
 
   void _loadDefault() {
     final storage = LocalStorageService.instance;
     final defaultMode = storage.defaultMode;
     state = defaultMode == 'indoor' ? AppMode.indoor : AppMode.outdoor;
+  }
+
+  Future<void> _autoDetectMode() async {
+    final storage = LocalStorageService.instance;
+    final savedServer = storage.smbServer;
+    
+    if (savedServer != null) {
+      final connectivity = _ref.read(connectivityServiceProvider);
+      final isWifi = await connectivity.isWifi;
+      if (isWifi) {
+        final success = await SmbService.instance.connect(savedServer).timeout(
+          const Duration(seconds: 3),
+          onTimeout: () => false,
+        );
+        if (success) {
+          state = AppMode.indoor;
+          await storage.setDefaultMode('indoor');
+          return;
+        }
+      }
+    }
+    
+    state = AppMode.outdoor;
+    await storage.setDefaultMode('outdoor');
   }
 
   Future<bool> toggle() async {
