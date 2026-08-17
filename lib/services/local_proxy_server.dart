@@ -74,9 +74,13 @@ class LocalProxyServer {
       return;
     }
 
+    // --- Resolve file size (cached) ---
     final cacheKey = '$share/$path';
+    debugPrint('Proxy: Request received for $cacheKey');
     if (!_fileSizeCache.containsKey(cacheKey)) {
+      debugPrint('Proxy: Fetching file size for $cacheKey');
       _fileSizeCache[cacheKey] = await smb.getFileSize(share, path);
+      debugPrint('Proxy: Fetched file size: ${_fileSizeCache[cacheKey]}');
     }
     final fileSize = _fileSizeCache[cacheKey]!;
     final rangeHeader = req.headers.value('range');
@@ -90,28 +94,56 @@ class LocalProxyServer {
     }
 
     final mime = _mime(path);
+    final isVideo = mime.startsWith('video/');
 
     if (start != null) {
-      final e = end ?? (fileSize - 1);
-      final len = e - start + 1;
+      // --- Range request ---
+      final rangeEnd = end ?? (fileSize - 1);
+      final len = rangeEnd - start + 1;
+
       req.response
         ..statusCode = 206
-        ..headers.set('Content-Range', 'bytes $start-$e/$fileSize')
+        ..headers.set('Content-Range', 'bytes $start-$rangeEnd/$fileSize')
         ..headers.set('Content-Length', len.toString())
         ..headers.set('Accept-Ranges', 'bytes')
-        ..headers.set('Content-Type', mime);
-      final stream = await smb.readFileStream(share, path, offset: start, length: len);
-      await req.response.addStream(stream);
+        ..headers.set('Content-Type', mime)
+        ..headers.set('Connection', 'keep-alive');
+
+      debugPrint('Proxy: serving range $start-$rangeEnd ($len bytes) of $fileSize');
+
+      try {
+ 
+        final stream = isVideo
+            ? await smb.readFileStreamBuffered(share, path, offset: start, length: len)
+            : await smb.readFileStream(share, path, offset: start, length: len);
+        await req.response.addStream(stream);
+      } catch (e) {
+        debugPrint('Proxy stream error: $e');
+       
+        if (isVideo) await smb.resetStreamClient();
+      }
     } else {
       req.response
         ..statusCode = 200
         ..headers.set('Content-Length', fileSize.toString())
         ..headers.set('Accept-Ranges', 'bytes')
-        ..headers.set('Content-Type', mime);
-      final stream = await smb.readFileStream(share, path);
-      await req.response.addStream(stream);
+        ..headers.set('Content-Type', mime)
+        ..headers.set('Connection', 'keep-alive');
+
+      try {
+        final stream = isVideo
+            ? await smb.readFileStreamBuffered(share, path)
+            : await smb.readFileStream(share, path);
+        await req.response.addStream(stream);
+      } catch (e) {
+        debugPrint('Proxy stream error (full): $e');
+        if (isVideo) await smb.resetStreamClient();
+      }
     }
-    await req.response.close();
+
+    try {
+      await req.response.close();
+    } catch (_) {}
   }
 
   String _mime(String path) {

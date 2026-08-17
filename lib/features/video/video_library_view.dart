@@ -6,10 +6,10 @@ import '../../core/utils/file_extensions.dart';
 import '../../core/widgets/shimmer_loader.dart';
 import '../../models/media_item_model.dart';
 import '../../providers/media_list_provider.dart';
-
+import '../../services/smb_service.dart';
 import '../../services/local_proxy_server.dart';
 
-/// Grid of video files from SMB (Indoor mode only).
+
 class VideoLibraryView extends ConsumerWidget {
   const VideoLibraryView({super.key});
 
@@ -155,6 +155,7 @@ class _VideoCard extends StatelessWidget {
     final parts = video.sourceId.split('/');
     final share = parts.first;
     final path = parts.sublist(1).join('/');
+
     final url = LocalProxyServer.instance.getProxyUrl(share, path);
 
     context.push('/player/video', extra: {

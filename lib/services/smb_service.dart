@@ -11,8 +11,13 @@ class SmbService {
   static SmbService? _instance;
   SmbConnect? _client;
   SmbConnect? _metadataClient;
+  SmbConnect? _streamClient;
   ServerInfo? _serverInfo;
   bool _isConnected = false;
+
+  /// Size of aggregated output chunks for buffered streaming.
+  /// Incoming 4KB SMB reads are collected into this size before yielding.
+  static const int _streamBufferSize = 512 * 1024; // 512KB
 
   SmbService._();
 
@@ -54,8 +59,12 @@ class SmbService {
     try {
       await _metadataClient?.close();
     } catch (_) {}
+    try {
+      await _streamClient?.close();
+    } catch (_) {}
     _client = null;
     _metadataClient = null;
+    _streamClient = null;
     _isConnected = false;
     _serverInfo = null;
   }
@@ -132,6 +141,85 @@ class SmbService {
 
     final smbFile = await _client!.file('/$share/$filePath');
     return await _client!.openRead(smbFile, offset, length != null && offset != null ? offset + length : null);
+  }
+
+  /// Opens a buffered read stream on a **dedicated streaming connection**.
+  ///
+  /// The tiny ~4KB chunks emitted by `smb_connect` are aggregated into
+  /// [_streamBufferSize] (512KB) blocks before being yielded downstream,
+  /// dramatically reducing I/O overhead for large file streaming.
+  ///
+  /// Uses a separate SMB connection ([_streamClient]) so video playback
+  /// never competes with directory listings or metadata operations on [_client].
+  Future<Stream<Uint8List>> readFileStreamBuffered(
+    String share,
+    String filePath, {
+    int? offset,
+    int? length,
+  }) async {
+    final client = await _getOrCreateStreamClient();
+    final smbFile = await client.file('/$share/$filePath');
+    final rawStream = await client.openRead(
+      smbFile,
+      offset,
+      length != null && offset != null ? offset + length : null,
+    );
+
+    // Aggregate small SMB chunks into large output blocks.
+    return _bufferStream(rawStream);
+  }
+
+  /// Aggregates a stream of small [Uint8List] chunks into larger blocks.
+  Stream<Uint8List> _bufferStream(Stream<Uint8List> source) async* {
+    final buffer = BytesBuilder(copy: false);
+
+    await for (final chunk in source) {
+      buffer.add(chunk);
+
+      while (buffer.length >= _streamBufferSize) {
+        final accumulated = buffer.takeBytes();
+        // If exactly _streamBufferSize, yield directly.
+        // If larger, split: yield the first _streamBufferSize and re-add rest.
+        if (accumulated.length <= _streamBufferSize) {
+          yield accumulated;
+        } else {
+          yield Uint8List.sublistView(accumulated, 0, _streamBufferSize);
+          buffer.add(Uint8List.sublistView(accumulated, _streamBufferSize));
+        }
+      }
+    }
+
+    // Flush any remaining data.
+    if (buffer.length > 0) {
+      yield buffer.takeBytes();
+    }
+  }
+
+  /// Returns the dedicated streaming client, creating it if necessary.
+  /// Auto-reconnects if the previous connection was lost.
+  Future<SmbConnect> _getOrCreateStreamClient() async {
+    if (_serverInfo == null) throw Exception('No server info');
+
+    if (_streamClient == null) {
+      _streamClient = await SmbConnect.connectAuth(
+        host: _serverInfo!.host,
+        domain: 'WORKGROUP',
+        username: 'guest',
+        password: '',
+      );
+      debugPrint('SMB stream client connected to ${_serverInfo!.host}');
+    }
+
+    return _streamClient!;
+  }
+
+  /// Closes and resets the dedicated streaming client.
+  /// Called by the proxy when a seek or disconnect invalidates the current stream.
+  Future<void> resetStreamClient() async {
+    try {
+      await _streamClient?.close();
+    } catch (_) {}
+    _streamClient = null;
   }
 
  

@@ -155,4 +155,15 @@ class LocalStorageService {
 
   Future<void> setThemeMode(String mode) =>
       _prefs.setString(_themeMode, mode);
+
+  static const _videoPositionPrefix = 'video_pos_';
+
+  Future<void> saveVideoPosition(String url, Duration position) async {
+    await _prefs.setInt('$_videoPositionPrefix$url', position.inMilliseconds);
+  }
+
+  Duration getVideoPosition(String url) {
+    final ms = _prefs.getInt('$_videoPositionPrefix$url') ?? 0;
+    return Duration(milliseconds: ms);
+  }
 }

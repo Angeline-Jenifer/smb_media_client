@@ -21,7 +21,8 @@ dependencies:
   audio_session: ^0.2.4
 
   # SMB/Samba Protocol
-  smb_connect: ^0.0.9
+  smb_connect:
+    path: ./plugins/smb_connect
 
   # Network Service Discovery
   nsd: ^5.0.1
