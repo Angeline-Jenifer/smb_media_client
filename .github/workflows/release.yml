@@ -66,11 +66,9 @@ jobs:
         # 📦 --split-per-abi builds 3 separate, highly optimized APKs (approx 15MB each)
         # instead of one massive 53MB Universal APK.
         run: |
-          CLIENT_ID=$(echo '${{ secrets.GOOGLE_CLIENT }}' | jq -r '.installed.client_id')
           flutter build apk --release --split-per-abi \
             --build-name=${{ env.VERSION }} \
-            --build-number=${{ env.BUILD_NUMBER }} \
-            --dart-define=GOOGLE_CLIENT_ID=$CLIENT_ID
+            --build-number=${{ env.BUILD_NUMBER }}
         env:
           KEYSTORE_PATH: release.keystore
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
