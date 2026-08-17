@@ -51,9 +51,9 @@ class _IndoorModeViewState extends ConsumerState<IndoorModeView> {
         ),
 
         Consumer(builder: (context, ref, child) {
-          final isPlaying = ref.watch(isPlayingProvider);
+          final currentTrack = ref.watch(currentTrackProvider).value;
           final isKeyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
-          if (isPlaying && !isKeyboardOpen) {
+          if (currentTrack != null && !isKeyboardOpen) {
             return const MiniPlayer();
           }
           return const SizedBox.shrink();

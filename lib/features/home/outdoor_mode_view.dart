@@ -21,8 +21,8 @@ class OutdoorModeView extends ConsumerWidget {
         ),
       
         Consumer(builder: (context, ref, child) {
-          final isPlaying = ref.watch(isPlayingProvider);
-          if (isPlaying && !isKeyboardOpen) {
+          final currentTrack = ref.watch(currentTrackProvider).value;
+          if (currentTrack != null && !isKeyboardOpen) {
             return const MiniPlayer();
           }
           return const SizedBox.shrink();

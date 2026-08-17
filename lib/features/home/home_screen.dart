@@ -101,7 +101,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
 
 
-            
+              _buildRefreshButton(),
+              const SizedBox(width: 6),
+
               _buildThemeToggle(),
               const SizedBox(width: 6),
 
@@ -203,6 +205,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           size: 20,
         ),
       ),
+    );
+  }
+
+  Widget _buildRefreshButton() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return IconButton(
+      onPressed: () {
+        ref.read(mediaListProvider.notifier).fetchMedia();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Refreshing media...'),
+            duration: Duration(seconds: 1),
+          ),
+        );
+      },
+      icon: Icon(
+        Icons.refresh_rounded,
+        color: isDark ? Colors.white : AppColors.lightTextPrimary,
+        size: 22,
+      ),
+      tooltip: 'Refresh library',
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
     );
   }
 
